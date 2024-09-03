@@ -105,6 +105,15 @@ limit_order = trade.create_order(
         trade.cancel_all_orders()
 
 
+def sell_kraken():
+    '''
+    Will sell if buy on coin
+    '''
+def sell_coin():
+    '''
+    will sell if buy on kraken
+    '''
+
 def coinbase_scan(rest_client):
     """scans for the price of the coins listed in coins_list 
     """
