@@ -105,10 +105,51 @@ limit_order = trade.create_order(
         trade.cancel_all_orders()
 
 
-def sell_kraken():
+def sell_kraken(trade,
+                price=None,
+                coin_coin="BTC-USD",
+                coin_kraken="BTC/CAD",
+                volume=0.0001,
+                buffer=0.05,
+                cancel=True):
     '''
     Will sell if buy on coin
     '''
+
+
+    if price is None:
+        product = rest_client.get_product(coin_coin)
+        price = float(product['price']/0.72)
+        new_price = (price + buffer*price)//1
+        logging.info(f"Pulled price {coin_coin}: {new_price}")
+
+    try:
+        limit_order = trade.create_order(
+            ordertype='limit',
+            side='sell',
+            volume=volume,
+            pair=coin_kraken,
+            price=new_price
+            )
+        print(limit_order)
+    except Exception as e:
+        logging.error(f"Error placing limit order kraken: {e}")
+        if hasattr(e, 'response') and e.response is not None:
+            logging.error(f"Response content: {e.response.content}")
+
+
+    if price is None:
+        product = rest_client.get_product(coin_coin)
+        price = float(product["price"]) /0.72
+        new_price= ((price - buffer*price)//1)
+        logging.info(f"Pulled price {coin_coin} : {new_price}")
+
+
+    if cancel:
+        trade.cancel_all_orders()
+
+
+
 def sell_coin():
     '''
     will sell if buy on kraken
