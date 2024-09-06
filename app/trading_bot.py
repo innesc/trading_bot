@@ -167,7 +167,8 @@ def coinbase_scan(rest_client):
     return df
 
 if __name__ == "__main__":
-
+    #docker run --env-file ./env.list ubuntu bash
+    
     print(CB_API_KEY)
     print(CB_SECRET)
     
@@ -180,18 +181,12 @@ if __name__ == "__main__":
     
     trade = Trade(key=KRAKEN_API_KEY, secret=KRAKEN_SECRET_KEY )
 
-    PATH = os.getenv('PATH_CSV')
     RUN = True
     FIRST = True
-    if not FIRST:
-        Data = pd.read_csv(PATH)
-    else:
-        Data = coinbase_scan(rest_client)
+
 
     while RUN:
         time.sleep(10)
-        df = coinbase_scan(rest_client)
-        Data = pd.concat([Data,df])
-        Data.to_csv(PATH)
+    
 
 
