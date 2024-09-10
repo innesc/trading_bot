@@ -166,8 +166,23 @@ def coinbase_scan(rest_client):
 
     return df
 
+def orchestration(Run):
+
+    price_krak = get_price_kraken()
+    price_coin = rest_client.get_products()
+
+
+    if price_krak > (price_coin + buffer):
+        sell_kraken()
+        buy_coin()
+    elif (price_krak +buffer) < price_coin :
+        buy_kraken()
+        sell_coin()
+    
+    return assesser()
+
 if __name__ == "__main__":
-    #docker run --env-file ./env.list ubuntu bash
+    #Docker up --env-file .env
     
     print(CB_API_KEY)
     print(CB_SECRET)
