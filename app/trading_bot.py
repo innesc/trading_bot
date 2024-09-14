@@ -150,14 +150,13 @@ def sell_kraken(trade,
 
 
 
-def sell_coin():
+def sell_coin(volume, coin_coin, new_price):
     '''
     will sell if buy on kraken
     '''
 
-
     try:
-        limit_order = rest_client.limit_order_gtc_buy(
+        limit_order = rest_client.limit_order_gtc_sell(
             client_order_id="00000002",
             product_id=coin_coin,
             base_size=str(volume),
@@ -168,10 +167,7 @@ def sell_coin():
         if hasattr(e, 'response') and e.response is not None:
             logging.error(f"Response content: {e.response.content}")
 
-
-    if cancel:
-        limit_order_id = limit_order["order_id"]
-        rest_client.cancel_orders(order_ids=[limit_order_id])
+    return rest_client, limit_order
 
 
 
