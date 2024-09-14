@@ -155,6 +155,26 @@ def sell_coin():
     will sell if buy on kraken
     '''
 
+
+    try:
+        limit_order = rest_client.limit_order_gtc_buy(
+            client_order_id="00000002",
+            product_id=coin_coin,
+            base_size=str(volume),
+            limit_price=str(new_price))
+    except Exception as e:
+        # Log the full error details
+        logging.error(f"Error placing limit order: {e}")
+        if hasattr(e, 'response') and e.response is not None:
+            logging.error(f"Response content: {e.response.content}")
+
+
+    if cancel:
+        limit_order_id = limit_order["order_id"]
+        rest_client.cancel_orders(order_ids=[limit_order_id])
+
+
+
 def coinbase_scan(rest_client):
     """scans for the price of the coins listed in coins_list 
     """
@@ -166,7 +186,25 @@ def coinbase_scan(rest_client):
 
     return df
 
-def orchestration(Run):
+def get_price_kraken(coin):
+    price = None
+
+    return price
+
+    return price
+
+def orchestration(Run, 
+                    buffer=0.05,
+                    rest_client,
+                    ):
+    
+    rest_client = RESTClient(
+                        api_secret=CB_SECRET,
+                        api_key=CB_API_KEY,
+                        base_url='api.coinbase.com'
+                        )
+    
+    trade = Trade(key=KRAKEN_API_KEY, secret=KRAKEN_SECRET_KEY )
 
     price_krak = get_price_kraken()
     price_coin = rest_client.get_products()
@@ -188,13 +226,7 @@ if __name__ == "__main__":
     print(CB_SECRET)
     
 
-    rest_client = RESTClient(
-                            api_secret=CB_SECRET,
-                            api_key=CB_API_KEY,
-                            base_url='api.coinbase.com'
-                            )
-    
-    trade = Trade(key=KRAKEN_API_KEY, secret=KRAKEN_SECRET_KEY )
+
 
     RUN = True
     FIRST = True
