@@ -14,14 +14,6 @@ KRAKEN_API_KEY = os.getenv("kraken_api_key")
 KRAKEN_SECRET_KEY = os.getenv("kraken_private_key")
 
 
-def kraken_scan():
-    market = Market()
-
-    #:return: The ticker(s) including ask, bid, close, volume, vwap, high, low, todays open and more
-    data = market.get_ticker()
-    df = pd.DataFrame(data)
-
-
 def trade_buy_coin(rest_client,
                     price=None,
                     coin_coin="BTC-USD",
@@ -183,11 +175,13 @@ def coinbase_scan(rest_client):
     return df
 
 def get_price_kraken(coin):
-    price = None
+    market = Market()
 
-    return price
-
-    return price
+    #:return: The ticker(s) including ask, bid, close, volume, vwap, high, low, todays open and more
+    data = market.get_ticker()
+    df = pd.DataFrame(data)
+ 
+    return df
 
 def orchestration(Run, 
                     buffer=0.05,
