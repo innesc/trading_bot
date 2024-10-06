@@ -183,9 +183,14 @@ def get_price_kraken(coin):
  
     return df
 
+def assesser():
+    '''
+    Trivial version. Dies immediately
+    '''
+    return False
+
 def orchestration(Run, 
                     buffer=0.05,
-                    rest_client,
                     ):
     
     rest_client = RESTClient(
@@ -214,15 +219,14 @@ if __name__ == "__main__":
     
     print(CB_API_KEY)
     print(CB_SECRET)
-    
-
 
 
     RUN = True
-    FIRST = True
-
 
     while RUN:
+        RUN = orchestration(RUN, 
+                    buffer=0.05,
+                    )
         time.sleep(10)
     
 
