@@ -181,7 +181,7 @@ def get_price_kraken(coin):
     data = market.get_ticker()
     df = pd.DataFrame(data)
  
-    return df
+    return df[df.ticker==coin]
 
 def assesser():
     '''
@@ -189,8 +189,11 @@ def assesser():
     '''
     return False
 
-def orchestration(Run, 
+def orchestration(
                     buffer=0.05,
+                    volume=0.0001,
+                    coin_coin='BTC-USDC',
+                    kraken_coin='BTC/USDC',
                     ):
     
     rest_client = RESTClient(
@@ -206,11 +209,32 @@ def orchestration(Run,
 
 
     if price_krak > (price_coin + buffer):
-        sell_kraken()
-        buy_coin()
+        sell_kraken(trade,
+                price=price_krak,
+                coin_coin="",
+                coin_kraken=kraken_coin,
+                volume=volume,
+                buffer=0,
+                cancel=False)
+        
+        trade_buy_coin(rest_client,
+                    price=price_coin,
+                    coin_coin=coin_coin,
+                    volume=volume,
+                    buffer=0,
+                    cancel=False)
+    
     elif (price_krak +buffer) < price_coin :
-        buy_kraken()
-        sell_coin()
+        trade_buy_kraken(trade,
+                    price=price_krak,
+                    coin_coin=coin_coin,
+                    coin_kraken="",
+                    volume=volume,
+                    buffer=0,
+                    cancel=True)
+
+
+        sell_coin(volume=volume,coin_coin=coin_coin, new_price=price_coin)
     
     return assesser()
 
@@ -223,11 +247,15 @@ if __name__ == "__main__":
 
     RUN = True
 
+
     while RUN:
-        RUN = orchestration(RUN, 
+        RUN = orchestration(
                     buffer=0.05,
-                    )
-        time.sleep(10)
+                    volume=0.0001,
+                    coin_coin='BTC-USDC',
+                    kraken_coin='BTC/USDC')
+        logging.info(f"Loop ran with RUN as {RUN}")
+        time.sleep(1)
     
 
 
