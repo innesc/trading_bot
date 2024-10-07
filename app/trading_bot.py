@@ -204,9 +204,12 @@ def orchestration(
     
     trade = Trade(key=KRAKEN_API_KEY, secret=KRAKEN_SECRET_KEY )
 
-    price_krak = get_price_kraken()
-    price_coin = rest_client.get_products()
+    price_krak = get_price_kraken(kraken_coin)
+    logging.info(f"The price in kraken {price_krak]}")
 
+    price_coin = rest_client.get_products()
+    df = pd.DataFrame(price_coin['products'])
+    price_coin = df[df['product id']==coin_coin]['price'].value
 
     if price_krak > (price_coin + buffer):
         sell_kraken(trade,
