@@ -181,11 +181,19 @@ def get_price_kraken(coin):
     data = market.get_ticker()
     df = pd.DataFrame(data)
  
-    return df
+    return df[df.ticker==coin]
 
-def orchestration(Run, 
+def assesser():
+    '''
+    Trivial version. Dies immediately
+    '''
+    return False
+
+def orchestration(
                     buffer=0.05,
-                    rest_client,
+                    volume=0.0001,
+                    coin_coin='BTC-USDC',
+                    kraken_coin='BTC/USDC',
                     ):
     
     rest_client = RESTClient(
@@ -196,16 +204,40 @@ def orchestration(Run,
     
     trade = Trade(key=KRAKEN_API_KEY, secret=KRAKEN_SECRET_KEY )
 
-    price_krak = get_price_kraken()
-    price_coin = rest_client.get_products()
+    price_krak = get_price_kraken(kraken_coin)
+    logging.info(f"The price in kraken {price_krak]}")
 
+    price_coin = rest_client.get_products()
+    df = pd.DataFrame(price_coin['products'])
+    price_coin = df[df['product id']==coin_coin]['price'].value
 
     if price_krak > (price_coin + buffer):
-        sell_kraken()
-        buy_coin()
+        sell_kraken(trade,
+                price=price_krak,
+                coin_coin="",
+                coin_kraken=kraken_coin,
+                volume=volume,
+                buffer=0,
+                cancel=False)
+        
+        trade_buy_coin(rest_client,
+                    price=price_coin,
+                    coin_coin=coin_coin,
+                    volume=volume,
+                    buffer=0,
+                    cancel=False)
+    
     elif (price_krak +buffer) < price_coin :
-        buy_kraken()
-        sell_coin()
+        trade_buy_kraken(trade,
+                    price=price_krak,
+                    coin_coin=coin_coin,
+                    coin_kraken="",
+                    volume=volume,
+                    buffer=0,
+                    cancel=True)
+
+
+        sell_coin(volume=volume,coin_coin=coin_coin, new_price=price_coin)
     
     return assesser()
 
@@ -214,16 +246,19 @@ if __name__ == "__main__":
     
     print(CB_API_KEY)
     print(CB_SECRET)
-    
-
 
 
     RUN = True
-    FIRST = True
 
 
     while RUN:
-        time.sleep(10)
+        RUN = orchestration(
+                    buffer=0.05,
+                    volume=0.0001,
+                    coin_coin='BTC-USDC',
+                    kraken_coin='BTC/USDC')
+        logging.info(f"Loop ran with RUN as {RUN}")
+        time.sleep(1)
     
 
 
