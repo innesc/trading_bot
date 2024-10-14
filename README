@@ -1,0 +1,4 @@
+## Steps to run as volume
+
+
+`$ docker run --name mysql-db -v $(pwd)/datadir:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=my-secret-pw -d mysql:8.0.28-debian`

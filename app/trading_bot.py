@@ -108,13 +108,6 @@ def sell_kraken(trade,
     Will sell if buy on coin
     '''
 
-
-    if price is None:
-        product = rest_client.get_product(coin_coin)
-        price = float(product['price']/0.72)
-        new_price = (price + buffer*price)//1
-        logging.info(f"Pulled price {coin_coin}: {new_price}")
-
     try:
         limit_order = trade.create_order(
             ordertype='limit',
@@ -142,7 +135,7 @@ def sell_kraken(trade,
 
 
 
-def sell_coin(volume, coin_coin, new_price):
+def sell_coin(rest_client, volume, coin_coin, new_price):
     '''
     will sell if buy on kraken
     '''
@@ -205,7 +198,7 @@ def orchestration(
     trade = Trade(key=KRAKEN_API_KEY, secret=KRAKEN_SECRET_KEY )
 
     price_krak = get_price_kraken(kraken_coin)
-    logging.info(f"The price in kraken {price_krak]}")
+    logging.info(f"The price in kraken {price_krak}")
 
     price_coin = rest_client.get_products()
     df = pd.DataFrame(price_coin['products'])
