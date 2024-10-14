@@ -25,21 +25,13 @@ def trade_buy_coin(rest_client,
     Works
     #rest_client.market_order_buy(client_order_id='00054353401', product_id='BTC-USDC',quote_size='1')
     '''
-    product = rest_client.get_product(coin_coin)
-
-    if price is None:
-        price = float(product["price"])
-        logging.info(f"price is {price}")
-
-
-    new_price = str(int(((price - buffer*price)//1)))
-
+   
     try:
         limit_order = rest_client.limit_order_gtc_buy(
             client_order_id="00000002",
             product_id=coin_coin,
             base_size=str(volume),
-            limit_price=str(new_price))
+            limit_price=str(price))
     except Exception as e:
         # Log the full error details
         logging.error(f"Error placing limit order: {e}")
@@ -69,14 +61,6 @@ limit_order = trade.create_order(
                 pair=coin_kraken,
             )
     '''
-    
-
-
-    if price is None:
-        product = rest_client.get_product(coin_coin)
-        price = float(product["price"]) /0.72
-        new_price= ((price - buffer*price)//1)
-        logging.info(f"Pulled price {coin_coin} : {new_price}")
 
     try:
         limit_order = trade.create_order(
@@ -84,7 +68,7 @@ limit_order = trade.create_order(
                 side="buy",
                 volume=volume,
                 pair=coin_kraken,
-                price=new_price ,
+                price=price ,
             )
         print(limit_order)
     except Exception as e:
@@ -108,20 +92,13 @@ def sell_kraken(trade,
     Will sell if buy on coin
     '''
 
-
-    if price is None:
-        product = rest_client.get_product(coin_coin)
-        price = float(product['price']/0.72)
-        new_price = (price + buffer*price)//1
-        logging.info(f"Pulled price {coin_coin}: {new_price}")
-
     try:
         limit_order = trade.create_order(
             ordertype='limit',
             side='sell',
             volume=volume,
             pair=coin_kraken,
-            price=new_price
+            price=price
             )
         print(limit_order)
     except Exception as e:
@@ -130,19 +107,12 @@ def sell_kraken(trade,
             logging.error(f"Response content: {e.response.content}")
 
 
-    if price is None:
-        product = rest_client.get_product(coin_coin)
-        price = float(product["price"]) /0.72
-        new_price= ((price - buffer*price)//1)
-        logging.info(f"Pulled price {coin_coin} : {new_price}")
-
-
     if cancel:
         trade.cancel_all_orders()
 
 
 
-def sell_coin(volume, coin_coin, new_price):
+def sell_coin(rest_client, volume, coin_coin, price):
     '''
     will sell if buy on kraken
     '''
@@ -152,7 +122,7 @@ def sell_coin(volume, coin_coin, new_price):
             client_order_id="00000002",
             product_id=coin_coin,
             base_size=str(volume),
-            limit_price=str(new_price))
+            limit_price=str(price))
     except Exception as e:
         # Log the full error details
         logging.error(f"Error placing limit order: {e}")
@@ -180,13 +150,15 @@ def get_price_kraken(coin):
     #:return: The ticker(s) including ask, bid, close, volume, vwap, high, low, todays open and more
     data = market.get_ticker()
     df = pd.DataFrame(data)
- 
+    
+    print("This ran")
+    logging.debug(df.head())
+
+
     return df[df.ticker==coin]
 
-def assesser():
-    '''
-    Trivial version. Dies immediately
-    '''
+def assess():
+    """Trivial version. Dies immediately"""
     return False
 
 def orchestration(
@@ -205,7 +177,7 @@ def orchestration(
     trade = Trade(key=KRAKEN_API_KEY, secret=KRAKEN_SECRET_KEY )
 
     price_krak = get_price_kraken(kraken_coin)
-    logging.info(f"The price in kraken {price_krak]}")
+    logging.info(f"The price in kraken {price_krak}")
 
     price_coin = rest_client.get_products()
     df = pd.DataFrame(price_coin['products'])
@@ -231,7 +203,7 @@ def orchestration(
         trade_buy_kraken(trade,
                     price=price_krak,
                     coin_coin=coin_coin,
-                    coin_kraken="",
+                    coin_kraken=kraken_coin,
                     volume=volume,
                     buffer=0,
                     cancel=True)
@@ -239,13 +211,14 @@ def orchestration(
 
         sell_coin(volume=volume,coin_coin=coin_coin, new_price=price_coin)
     
-    return assesser()
+    return assess()
 
 if __name__ == "__main__":
     #Docker up --env-file .env
     
-    print(CB_API_KEY)
-    print(CB_SECRET)
+    print('test I can change again')
+    #print(CB_API_KEY)
+    #print(CB_SECRET)
 
 
     RUN = True
