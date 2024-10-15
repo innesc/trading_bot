@@ -18,7 +18,7 @@ logger.addHandler(logging.StreamHandler())
 
 def trade_buy_coin(rest_client,
                     price=None,
-                    coin_coin="BTC-USD",
+                    coin_coin="",
                     volume=0.0001,
                     buffer=0.05,
                     cancel=True):
@@ -34,6 +34,7 @@ def trade_buy_coin(rest_client,
             product_id=coin_coin,
             base_size=str(volume),
             limit_price=str(price))
+        print(limit_order)
     except Exception as e:
         # Log the full error details
         logger.error(f"Error placing limit order: {e}")
@@ -85,8 +86,8 @@ limit_order = trade.create_order(
 
 def sell_kraken(trade,
                 price=None,
-                coin_coin="BTC-USD",
-                coin_kraken="BTC/CAD",
+                coin_coin="",
+                coin_kraken="",
                 volume=0.0001,
                 buffer=0.05,
                 cancel=True):
@@ -125,6 +126,8 @@ def sell_coin(rest_client, volume, coin_coin, price):
             product_id=coin_coin,
             base_size=str(volume),
             limit_price=str(price))
+        
+        print(limit_order)
     except Exception as e:
         # Log the full error details
         logger.error(f"Error placing limit order: {e}")
@@ -236,7 +239,7 @@ if __name__ == "__main__":
 
     while RUN:
         RUN = orchestration(
-                    buffer=0.05,
+                    buffer=0.00,
                     volume=0.0001,
                     coin_coin='BTC-USDC',
                     kraken_coin='BTC/USDC')
