@@ -12,7 +12,9 @@ CB_SECRET = os.getenv("CB_SECRET")
 CB_API_KEY = os.getenv("CB_API_KEY")
 KRAKEN_API_KEY = os.getenv("kraken_api_key")
 KRAKEN_SECRET_KEY = os.getenv("kraken_private_key")
-
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+logger.addHandler(logging.StreamHandler())
 
 def trade_buy_coin(rest_client,
                     price=None,
@@ -34,9 +36,9 @@ def trade_buy_coin(rest_client,
             limit_price=str(price))
     except Exception as e:
         # Log the full error details
-        logging.error(f"Error placing limit order: {e}")
+        logger.error(f"Error placing limit order: {e}")
         if hasattr(e, 'response') and e.response is not None:
-            logging.error(f"Response content: {e.response.content}")
+            logger.error(f"Response content: {e.response.content}")
 
 
     if cancel:
@@ -73,9 +75,9 @@ limit_order = trade.create_order(
         print(limit_order)
     except Exception as e:
         
-        logging.error(f"Error placing limit order kraken: {e}")
+        logger.error(f"Error placing limit order kraken: {e}")
         if hasattr(e, 'response') and e.response is not None:
-            logging.error(f"Response content: {e.response.content}")
+            logger.error(f"Response content: {e.response.content}")
 
     if cancel:
         trade.cancel_all_orders()
@@ -102,9 +104,9 @@ def sell_kraken(trade,
             )
         print(limit_order)
     except Exception as e:
-        logging.error(f"Error placing limit order kraken: {e}")
+        logger.error(f"Error placing limit order kraken: {e}")
         if hasattr(e, 'response') and e.response is not None:
-            logging.error(f"Response content: {e.response.content}")
+            logger.error(f"Response content: {e.response.content}")
 
 
     if cancel:
@@ -125,9 +127,9 @@ def sell_coin(rest_client, volume, coin_coin, price):
             limit_price=str(price))
     except Exception as e:
         # Log the full error details
-        logging.error(f"Error placing limit order: {e}")
+        logger.error(f"Error placing limit order: {e}")
         if hasattr(e, 'response') and e.response is not None:
-            logging.error(f"Response content: {e.response.content}")
+            logger.error(f"Response content: {e.response.content}")
 
     return rest_client, limit_order
 
@@ -152,10 +154,10 @@ def get_price_kraken(coin):
     df = pd.DataFrame(data)
     
     print("This ran")
-    logging.debug(df.head())
+    logger.debug(df[coin].loc['a'])
 
 
-    return df[df.ticker==coin]
+    return df[coin].loc['a'][0]
 
 def assess():
     """Trivial version. Dies immediately"""
@@ -166,6 +168,7 @@ def orchestration(
                     volume=0.0001,
                     coin_coin='BTC-USDC',
                     kraken_coin='BTC/USDC',
+                    kraken_market='TBTCUSD'
                     ):
     
     rest_client = RESTClient(
@@ -176,17 +179,24 @@ def orchestration(
     
     trade = Trade(key=KRAKEN_API_KEY, secret=KRAKEN_SECRET_KEY )
 
-    price_krak = get_price_kraken(kraken_coin)
-    logging.info(f"The price in kraken {price_krak}")
+    price_krak = get_price_kraken( kraken_market)
+    logger.info(f"The price in kraken {price_krak}")
 
     price_coin = rest_client.get_products()
     df = pd.DataFrame(price_coin['products'])
-    price_coin = df[df['product id']==coin_coin]['price'].value
+    price_coin = df[df['product_id']==coin_coin]['price']
+    logger.info(f"The price in coin {price_coin}")
 
-    if price_krak > (price_coin + buffer):
+    price_krak = float(price_krak )
+    price_coin= float(price_coin)
+    print(f"price coin: {price_coin}  price kraken {price_krak}")
+
+    if price_krak > (price_coin + buffer * price_coin ):
+
+        print("buy coin sell kraken")
         sell_kraken(trade,
                 price=price_krak,
-                coin_coin="",
+                coin_coin=coin_coin,
                 coin_kraken=kraken_coin,
                 volume=volume,
                 buffer=0,
@@ -199,7 +209,8 @@ def orchestration(
                     buffer=0,
                     cancel=False)
     
-    elif (price_krak +buffer) < price_coin :
+    elif (price_krak +buffer * price_krak) < price_coin :
+        print("buy kraken sell coin")
         trade_buy_kraken(trade,
                     price=price_krak,
                     coin_coin=coin_coin,
@@ -208,8 +219,7 @@ def orchestration(
                     buffer=0,
                     cancel=True)
 
-
-        sell_coin(volume=volume,coin_coin=coin_coin, new_price=price_coin)
+        sell_coin(rest_client, volume=volume,coin_coin=coin_coin, price=price_coin)
     
     return assess()
 
@@ -230,7 +240,7 @@ if __name__ == "__main__":
                     volume=0.0001,
                     coin_coin='BTC-USDC',
                     kraken_coin='BTC/USDC')
-        logging.info(f"Loop ran with RUN as {RUN}")
+        logger.info(f"Loop ran with RUN as {RUN}")
         time.sleep(1)
     
 
