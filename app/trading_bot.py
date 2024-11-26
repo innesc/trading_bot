@@ -5,6 +5,7 @@ from datetime import datetime
 import os
 from kraken.spot import  Funding, Market, Trade, User
 import logging
+import random
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -17,6 +18,7 @@ logging.basicConfig(level=logging.INFO)
 logger.addHandler(logging.StreamHandler())
 
 def trade_buy_coin(rest_client,
+                   count,
                     price=None,
                     coin_coin="",
                     volume=0.0001,
@@ -30,7 +32,7 @@ def trade_buy_coin(rest_client,
    
     try:
         limit_order = rest_client.limit_order_gtc_buy(
-            client_order_id="00000002",
+            client_order_id=str(count),
             product_id=coin_coin,
             base_size=str(volume),
             limit_price=str(price))
@@ -41,6 +43,7 @@ def trade_buy_coin(rest_client,
         if hasattr(e, 'response') and e.response is not None:
             logger.error(f"Response content: {e.response.content}")
 
+    print(f"value of cancel: {cancel}")
 
     if cancel:
         limit_order_id = limit_order["order_id"]
@@ -115,14 +118,14 @@ def sell_kraken(trade,
 
 
 
-def sell_coin(rest_client, volume, coin_coin, price):
+def sell_coin(rest_client, count, volume, coin_coin, price):
     '''
     will sell if buy on kraken
     '''
 
     try:
         limit_order = rest_client.limit_order_gtc_sell(
-            client_order_id="00000002",
+            client_order_id=str(count),
             product_id=coin_coin,
             base_size=str(volume),
             limit_price=str(price))
@@ -160,20 +163,50 @@ def get_price_kraken(coin):
     logger.debug(df[coin].loc['a'])
 
 
-    return df[coin].loc['a'][0]
+    return (float(df[coin].loc['a'][0]) +  float(df[coin].loc['b'][0])) / 2
 
-def assess():
-    """Trivial version. Dies immediately"""
-    return False
+def assess(count: int, traded: bool, count_trades: int, threshold=2) -> bool:
+    """
+    Determine if a trade attempt is allowed.
 
+    Parameters:
+    count (int): The current trade count.
+    traded (bool): A flag indicating if a trade has already been attempted.
+    count_trades (int): The total number of trades in the trading session.
+
+    Returns:
+    bool: False if a trade has been attempted, True otherwise.
+    """
+    # Check if a trade has already been made
+    if (traded & (count_trades > threshold)):
+        # No further trade attempts allowed
+        return False
+    else:
+        # Trade attempt is allowed
+        return True
+    
 def orchestration(
                     buffer=0.05,
                     volume=0.0001,
                     coin_coin='BTC-USDC',
                     kraken_coin='BTC/USDC',
-                    kraken_market='TBTCUSD'
+                    count=1,
+                    kraken_market='TBTCUSD',
+                    count_trades=0
                     ):
+    """
+    Orchestration function for trading bot
+    Parameters:
+    buffer (float): how much more expensive the kraken price must be than the coin price
+    volume (float): how many coins to trade
+    coin_coin (str): id of the coin on coinbase
+    kraken_coin (str): id of the coin on kraken
+    count (int): a counter to keep track of the trade number
+    kraken_market (str): market to get the price from in kraken
     
+    Returns:
+    bool: whether a trade was made or not
+    """
     rest_client = RESTClient(
                         api_secret=CB_SECRET,
                         api_key=CB_API_KEY,
@@ -182,9 +215,11 @@ def orchestration(
     
     trade = Trade(key=KRAKEN_API_KEY, secret=KRAKEN_SECRET_KEY )
 
+    # Get the price from Kraken
     price_krak = get_price_kraken( kraken_market)
     logger.info(f"The price in kraken {price_krak}")
 
+    # Get the price from Coinbase
     price_coin = rest_client.get_products()
     df = pd.DataFrame(price_coin['products'])
     price_coin = df[df['product_id']==coin_coin]['price']
@@ -194,9 +229,11 @@ def orchestration(
     price_coin= float(price_coin)
     print(f"price coin: {price_coin}  price kraken {price_krak}")
 
+    traded = False
     if price_krak > (price_coin + buffer * price_coin ):
 
         print("buy coin sell kraken")
+        # Buy on Kraken
         sell_kraken(trade,
                 price=price_krak,
                 coin_coin=coin_coin,
@@ -205,26 +242,37 @@ def orchestration(
                 buffer=0,
                 cancel=False)
         
+        print("buy coin worked")
+        # Buy on Coinbase
         trade_buy_coin(rest_client,
+                       count,
                     price=price_coin,
                     coin_coin=coin_coin,
                     volume=volume,
                     buffer=0,
                     cancel=False)
-    
+        print("buy coin worked 2")
+        traded = True
+        count_trades = count_trades + 1
     elif (price_krak +buffer * price_krak) < price_coin :
         print("buy kraken sell coin")
+        # Buy on Kraken
         trade_buy_kraken(trade,
                     price=price_krak,
                     coin_coin=coin_coin,
                     coin_kraken=kraken_coin,
                     volume=volume,
                     buffer=0,
-                    cancel=True)
+                    cancel=False)
+        print("buy kraken sell coin")
 
-        sell_coin(rest_client, volume=volume,coin_coin=coin_coin, price=price_coin)
-    
-    return assess()
+        print("sell coin worked")
+        # Sell on Coinbase
+        sell_coin(rest_client, count, volume=volume,coin_coin=coin_coin, price=price_coin)
+        print("sell coin worked 2")
+        traded = True
+        count_trades = count_trades + 1
+    return assess(count, traded, count_trades), count_trades
 
 if __name__ == "__main__":
     #Docker up --env-file .env
@@ -235,15 +283,21 @@ if __name__ == "__main__":
 
 
     RUN = True
-
+    count = 0
+    count_trades = 0
 
     while RUN:
-        RUN = orchestration(
+        count += 1
+        RUN, count_trades = orchestration(
                     buffer=0.00,
                     volume=0.0001,
                     coin_coin='BTC-USDC',
-                    kraken_coin='BTC/USDC')
-        logger.info(f"Loop ran with RUN as {RUN}")
+                    kraken_coin='BTC/USDC',
+                    count=count,
+                    count_trades=count_trades
+                    )
+        logger.info(f"Loop ran with count as {count}")
+        logger.info(f"Loop ran with trade count as {count_trades}")
         time.sleep(1)
     
 
