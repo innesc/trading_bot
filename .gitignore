@@ -1,6 +1,7 @@
 .env
 Trading/
 adhoc_dont_commit/
+*.csv
 
 
 __pycache__/
