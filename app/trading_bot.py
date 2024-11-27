@@ -165,6 +165,37 @@ def get_price_kraken(coin):
 
     return (float(df[coin].loc['a'][0]) +  float(df[coin].loc['b'][0])) / 2
 
+
+def price_logger(price_krak, price_coin, coin_coin, path_csv='/Users/clintoninnes/Desktop/programming/python_stuff/2024/trading_bot/temp.csv'):
+    
+    """
+    Logs prices of coin on kraken and coinbase.
+
+    Parameters
+    ----------
+    price_krak : float
+        The price of the coin on kraken.
+    price_coin : float
+        The price of the coin on coinbase.
+    coin_coin : str
+        The coin being traded.
+    path_csv : str
+        The path to where the csv will be saved
+    Returns
+    -------
+    None
+    """
+    if os.path.isfile(path_csv) == False :
+        now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        df = pd.DataFrame({'time':[now],'price_krak':[price_krak], 'price_coin':[price_coin], 'coin_coin':[coin_coin]})
+        df.to_csv(path_csv, index=False)
+    else:
+        df_all = pd.read_csv(path_csv)
+        df = df_all.append(pd.DataFrame({'time':[now],'price_krak':[price_krak], 'price_coin':[price_coin], 'coin_coin':[coin_coin]}))
+        df_all.to_csv(path_csv, index=False)
+        
+
+
 def assess(count: int, traded: bool, count_trades: int, threshold=2) -> bool:
     """
     Determine if a trade attempt is allowed.
@@ -229,6 +260,7 @@ def orchestration(
     price_coin= float(price_coin)
     print(f"price coin: {price_coin}  price kraken {price_krak}")
 
+    
     traded = False
     if price_krak > (price_coin + buffer * price_coin ):
 
@@ -272,6 +304,8 @@ def orchestration(
         print("sell coin worked 2")
         traded = True
         count_trades = count_trades + 1
+
+    price_logger(price_krak, price_coin, coin_coin)
     return assess(count, traded, count_trades), count_trades
 
 if __name__ == "__main__":
@@ -289,7 +323,7 @@ if __name__ == "__main__":
     while RUN:
         count += 1
         RUN, count_trades = orchestration(
-                    buffer=0.00,
+                    buffer=0.01,
                     volume=0.0001,
                     coin_coin='BTC-USDC',
                     kraken_coin='BTC/USDC',
@@ -298,7 +332,7 @@ if __name__ == "__main__":
                     )
         logger.info(f"Loop ran with count as {count}")
         logger.info(f"Loop ran with trade count as {count_trades}")
-        time.sleep(1)
+        time.sleep(3)
     
 
 
