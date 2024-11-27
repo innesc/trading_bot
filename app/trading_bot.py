@@ -213,7 +213,7 @@ def coinbase_scan(rest_client):
 def get_price_kraken(coin):
     """
     Gets the current price of a coin on Kraken.
-
+a
     Parameters
     ----------
     coin : str
@@ -233,7 +233,7 @@ def get_price_kraken(coin):
     logger.debug(df[coin].loc['a'])
     logger.debug(df[coin].loc['b'])
 
-    # Calculate the mean of the ask and bid prices
+    # Calculate the mean of the ask and bid prices.  #:return: The ticker(s) including ask, bid, close, volume, vwap, high, low, todays open and more
     return (float(df[coin].loc['a'][0]) +  float(df[coin].loc['b'][0])) / 2
 
 
@@ -267,7 +267,7 @@ def price_logger(price_krak, price_coin, coin_coin, path_csv='/Users/clintoninne
         
 
 
-def assess(count: int, traded: bool, count_trades: int, threshold=2, logging_path='/Users/clintoninnes/Desktop/programming/python_stuff/2024/trading_bot/trading_bot_accounts().csv') -> bool:
+def assess(count: int, traded: bool, count_trades: int, threshold=5, logging_path='/Users/clintoninnes/Desktop/programming/python_stuff/2024/trading_bot/trading_bot_accounts.csv') -> bool:
     """
     Determine if a trade attempt is allowed.
 
@@ -288,7 +288,8 @@ def assess(count: int, traded: bool, count_trades: int, threshold=2, logging_pat
     else:
         df_all = pd.read_csv(logging_path)
         df =  get_account_balances()
-        df.to_csv(logging_path, index=False)
+        df_all = df_all.append(df)
+        df_all.to_csv(logging_path, index=False)
         
 
     # Check if a trade has already been made
@@ -305,7 +306,7 @@ def orchestration(
                     coinbase_coin: str = 'BTC-USDC',
                     kraken_coin: str = 'BTC/USDC',
                     count: int = 1,
-                    kraken_market: str = 'TBTCUSD',
+                    kraken_market: str = 'XBTUSDC',
                     count_trades: int = 0,
                     live_trade: bool = True
                     ) -> tuple:
@@ -401,11 +402,11 @@ if __name__ == "__main__":
                     kraken_coin='BTC/USDC',
                     count=count,
                     count_trades=count_trades,
-                    live_trade=False
+                    live_trade=True
                     )
         logger.info(f"Loop ran with count as {count}")
         logger.info(f"Loop ran with trade count as {count_trades}")
-        time.sleep(3)
+        time.sleep(30)
     
 
 
