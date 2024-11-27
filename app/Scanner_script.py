@@ -45,7 +45,7 @@ def coinbase_scan():
     df = df['price'].to_frame().T
     now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     df['logging_time'] = now
-
+    df.index=range(len(df))
     return df
 
 def log_both():
@@ -74,9 +74,8 @@ if __name__ == "__main__":
         Data = pd.read_csv(PATH)
     else:
         Data = log_both()
-
     while RUN:
-        time.sleep(30)
+        time.sleep(15)
         df = log_both()
         Data = pd.concat([Data,df])
         Data.to_csv(PATH)
