@@ -306,7 +306,8 @@ def orchestration(
                     kraken_coin: str = 'BTC/USDC',
                     count: int = 1,
                     kraken_market: str = 'TBTCUSD',
-                    count_trades: int = 0
+                    count_trades: int = 0,
+                    live_trade: bool = True
                     ) -> tuple:
     """
     Orchestration function for trading bot. This function will trade if the price of the coin on Kraken is higher than the
@@ -326,7 +327,7 @@ def orchestration(
     rest_client = RESTClient(
                         api_secret=CB_SECRET,
                         api_key=CB_API_KEY,
-                        base_url='api.coinbase.com'
+                        base_url='api.coinbase.com',
                         )
     
     trade = Trade(key=KRAKEN_API_KEY, secret=KRAKEN_SECRET_KEY )
@@ -336,45 +337,50 @@ def orchestration(
     logger.info(f"The price in kraken {kraken_price}")
 
     # Get the price from Coinbase
-    coinbase_price = rest_client.get_products()['products'][coinbase_coin]['price']
+    price_coin = rest_client.get_products()
+    df = pd.DataFrame(price_coin['products'])
+    price_coin = df[df['product_id']== coinbase_coin]['price']
+    coinbase_price = float(price_coin)
+
     logger.info(f"The price in coin {coinbase_price}")
 
     # Check if we should trade
     traded = False
-    if kraken_price > (coinbase_price + buffer * coinbase_price):
-        # Buy on Kraken
-        sell_kraken(trade,
-                    price=kraken_price,
-                    coin_coin=coinbase_coin,
-                    coin_kraken=kraken_coin,
-                    volume=volume,
-                    buffer=0,
-                    cancel=False)
-        
-        # Buy on Coinbase
-        trade_buy_coin(rest_client,
-                       count,
-                    price=coinbase_price,
-                    coin_coin=coinbase_coin,
-                    volume=volume,
-                    buffer=0,
-                    cancel=False)
-        traded = True
-        count_trades += 1
-    elif (kraken_price + buffer * kraken_price) < coinbase_price:
-        # Buy on Kraken
-        trade_buy_kraken(trade,
-                    price=kraken_price,
-                    coin_coin=coinbase_coin,
-                    coin_kraken=kraken_coin,
-                    volume=volume,
-                    cancel=False)
-        # Sell on Coinbase
-        sell_coin(rest_client, count, volume=volume,coin_coin=coinbase_coin, price=coinbase_price)
-        traded = True
-        count_trades = count_trades + 1
+    if live_trade:
+        if kraken_price > (coinbase_price + buffer * coinbase_price):
+            # Buy on Kraken
+            sell_kraken(trade,
+                        price=kraken_price,
+                        coin_coin=coinbase_coin,
+                        coin_kraken=kraken_coin,
+                        volume=volume,
+                        buffer=0,
+                        cancel=False)
+            
+            # Buy on Coinbase
+            trade_buy_coin(rest_client,
+                        count,
+                        price=coinbase_price,
+                        coin_coin=coinbase_coin,
+                        volume=volume,
+                        buffer=0,
+                        cancel=False)
+            traded = True
+            count_trades += 1
+        elif (kraken_price + buffer * kraken_price) < coinbase_price:
+            # Buy on Kraken
+            trade_buy_kraken(trade,
+                        price=kraken_price,
+                        coin_coin=coinbase_coin,
+                        coin_kraken=kraken_coin,
+                        volume=volume,
+                        cancel=False)
+            # Sell on Coinbase
+            sell_coin(rest_client, count, volume=volume,coin_coin=coinbase_coin, price=coinbase_price)
+            traded = True
+            count_trades = count_trades + 1
     
-    price_logger(price_krak, price_coin, coin_coin)
+    price_logger(kraken_price, coinbase_price, coinbase_coin)
     return assess(count, traded, count_trades), count_trades
 
 if __name__ == "__main__":
@@ -394,11 +400,12 @@ if __name__ == "__main__":
                     coinbase_coin='BTC-USDC',
                     kraken_coin='BTC/USDC',
                     count=count,
-                    count_trades=count_trades
+                    count_trades=count_trades,
+                    live_trade=False
                     )
         logger.info(f"Loop ran with count as {count}")
         logger.info(f"Loop ran with trade count as {count_trades}")
-        time.sleep(30)
+        time.sleep(3)
     
 
 
