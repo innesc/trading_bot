@@ -185,8 +185,8 @@ def price_logger(price_krak, price_coin, coin_coin, path_csv='/Users/clintoninne
     -------
     None
     """
+    now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     if os.path.isfile(path_csv) == False :
-        now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
         df = pd.DataFrame({'time':[now],'price_krak':[price_krak], 'price_coin':[price_coin], 'coin_coin':[coin_coin]})
         df.to_csv(path_csv, index=False)
     else:
@@ -262,6 +262,7 @@ def orchestration(
 
     
     traded = False
+    '''
     if price_krak > (price_coin + buffer * price_coin ):
 
         print("buy coin sell kraken")
@@ -304,7 +305,7 @@ def orchestration(
         print("sell coin worked 2")
         traded = True
         count_trades = count_trades + 1
-
+    '''
     price_logger(price_krak, price_coin, coin_coin)
     return assess(count, traded, count_trades), count_trades
 
