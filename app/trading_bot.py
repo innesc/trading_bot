@@ -192,7 +192,7 @@ def price_logger(price_krak, price_coin, coin_coin, path_csv='/Users/clintoninne
     else:
         df_all = pd.read_csv(path_csv)
         df = df_all.append(pd.DataFrame({'time':[now],'price_krak':[price_krak], 'price_coin':[price_coin], 'coin_coin':[coin_coin]}))
-        df_all.to_csv(path_csv, index=False)
+        df.to_csv(path_csv, index=False)
         
 
 
@@ -333,7 +333,7 @@ if __name__ == "__main__":
                     )
         logger.info(f"Loop ran with count as {count}")
         logger.info(f"Loop ran with trade count as {count_trades}")
-        time.sleep(3)
+        time.sleep(30)
     
 
 
