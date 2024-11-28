@@ -20,165 +20,52 @@ def kraken_scan():
     #:return: The ticker(s) including ask, bid, close, volume, vwap, high, low, todays open and more
     data = market.get_ticker()
     df = pd.DataFrame(data)
+    for col in df.columns:
+        df[col] = df[col].map(lambda x: x[0])
 
 
-def trade_buy_coin(rest_client,
-                    price=None,
-                    coin_coin="BTC-USD",
-                    volume=0.0001,
-                    buffer=0.05,
-                    cancel=True):
-    '''
-    https://docs.cdp.coinbase.com/advanced-trade/docs/sdk-rest-client-trade/
-    Works
-    #rest_client.market_order_buy(client_order_id='00054353401', product_id='BTC-USDC',quote_size='1')
-    '''
-    product = rest_client.get_product(coin_coin)
+    df = ((df.loc['a',:].astype(float) + df.loc['b',:].astype(float)) / 2)
 
-    if price is None:
-        price = float(product["price"])
-        logging.info(f"price is {price}")
+    df['logging time kraken'] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    return df.to_frame().T
 
-
-    new_price = str(int(((price - buffer*price)//1)))
-
-    try:
-        limit_order = rest_client.limit_order_gtc_buy(
-            client_order_id="00000002",
-            product_id=coin_coin,
-            base_size=str(volume),
-            limit_price=str(new_price))
-    except Exception as e:
-        # Log the full error details
-        logging.error(f"Error placing limit order: {e}")
-        if hasattr(e, 'response') and e.response is not None:
-            logging.error(f"Response content: {e.response.content}")
-
-
-    if cancel:
-        limit_order_id = limit_order["order_id"]
-        rest_client.cancel_orders(order_ids=[limit_order_id])
-
-
-def trade_buy_kraken(trade,
-                    price=None,
-                    coin_coin="BTC-USD",
-                    coin_kraken="BTC/CAD",
-                    volume=0.0001,
-                    buffer=0.05,
-                    cancel=True):
-    
-    '''
-    Works
-limit_order = trade.create_order(
-                ordertype="market",
-                side="buy",
-                volume=10,
-                pair=coin_kraken,
-            )
-    '''
-    
-
-
-    if price is None:
-        product = rest_client.get_product(coin_coin)
-        price = float(product["price"]) /0.72
-        new_price= ((price - buffer*price)//1)
-        logging.info(f"Pulled price {coin_coin} : {new_price}")
-
-    try:
-        limit_order = trade.create_order(
-                ordertype="limit",
-                side="buy",
-                volume=volume,
-                pair=coin_kraken,
-                price=new_price ,
-            )
-        print(limit_order)
-    except Exception as e:
-        
-        logging.error(f"Error placing limit order kraken: {e}")
-        if hasattr(e, 'response') and e.response is not None:
-            logging.error(f"Response content: {e.response.content}")
-
-    if cancel:
-        trade.cancel_all_orders()
-
-
-def sell_kraken(trade,
-                price=None,
-                coin_coin="BTC-USD",
-                coin_kraken="BTC/CAD",
-                volume=0.0001,
-                buffer=0.05,
-                cancel=True):
-    '''
-    Will sell if buy on coin
-    '''
-
-
-    if price is None:
-        product = rest_client.get_product(coin_coin)
-        price = float(product['price']/0.72)
-        new_price = (price + buffer*price)//1
-        logging.info(f"Pulled price {coin_coin}: {new_price}")
-
-    try:
-        limit_order = trade.create_order(
-            ordertype='limit',
-            side='sell',
-            volume=volume,
-            pair=coin_kraken,
-            price=new_price
-            )
-        print(limit_order)
-    except Exception as e:
-        logging.error(f"Error placing limit order kraken: {e}")
-        if hasattr(e, 'response') and e.response is not None:
-            logging.error(f"Response content: {e.response.content}")
-
-
-    if price is None:
-        product = rest_client.get_product(coin_coin)
-        price = float(product["price"]) /0.72
-        new_price= ((price - buffer*price)//1)
-        logging.info(f"Pulled price {coin_coin} : {new_price}")
-
-
-    if cancel:
-        trade.cancel_all_orders()
-
-
-
-def sell_coin():
-    '''
-    will sell if buy on kraken
-    '''
-
-def coinbase_scan(rest_client):
+def coinbase_scan():
     """scans for the price of the coins listed in coins_list 
     """
     
-    price = rest_client.get_products()
-    df = pd.DataFrame(price['products'])
-    now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-    df['logging_time'] = now
-
-    return df
-
-if __name__ == "__main__":
-
-    print(CB_API_KEY)
-    print(CB_SECRET)
-    
-
     rest_client = RESTClient(
                             api_secret=CB_SECRET,
                             api_key=CB_API_KEY,
                             base_url='api.coinbase.com'
                             )
-    
-    trade = Trade(key=KRAKEN_API_KEY, secret=KRAKEN_SECRET_KEY )
+
+    price = rest_client.get_products()
+    df = pd.DataFrame(price['products'])
+    df.index = df.product_id
+    df = df['price'].to_frame().T
+    now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    df['logging_time'] = now
+    df.index=range(len(df))
+    return df
+
+def log_both():
+    df_coinbase = coinbase_scan()
+    df_kraken = kraken_scan()
+    df_kraken.columns = [col + '_from_kraken' for col in df_kraken.columns]
+    df_coinbase.columns = [col + '_from_coin' for col in df_coinbase.columns]
+
+    print( df_coinbase.shape)
+
+    print(df_kraken.shape)
+
+
+    return pd.concat([df_kraken, df_coinbase], axis=1)
+
+
+
+
+if __name__ == "__main__":
+
 
     PATH = os.getenv('PATH_CSV')
     RUN = True
@@ -186,12 +73,12 @@ if __name__ == "__main__":
     if not FIRST:
         Data = pd.read_csv(PATH)
     else:
-        Data = coinbase_scan(rest_client)
-
+        Data = log_both()
     while RUN:
-        time.sleep(10)
-        df = coinbase_scan(rest_client)
+        time.sleep(15)
+        df = log_both()
         Data = pd.concat([Data,df])
         Data.to_csv(PATH)
+        print(f"This many rows and columns logged {str(Data.shape)}")
 
 
