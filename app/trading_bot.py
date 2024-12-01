@@ -111,7 +111,7 @@ def trade_buy_kraken(trade,
         trade.cancel_all_orders(order_ids=[limit_order_id])
 
 
-def get_account_balances():
+def get_account_balances_BTC():
 
     user = User(key=KRAKEN_API_KEY, secret=KRAKEN_SECRET_KEY)
     account_balance = user.get_account_balance()
@@ -125,8 +125,32 @@ def get_account_balances():
     print(accounts)
     coin_USDC = [account for account in accounts if (account['name'] in [ 'USDC Wallet'])][0]['available_balance']['value']
     coin_BTC = [account for account in accounts if (account['name'] in ['BTC Wallet'])][0]['available_balance']['value']
+    
 
     total_portfolio = pd.DataFrame({'USDC': [float(account_balance['USDC']) + float(coin_USDC)], 'BTC':[float(account_balance['XXBT']) + float(coin_BTC)]})
+    print(total_portfolio)
+
+    return total_portfolio
+
+
+def get_account_balances():
+
+    user = User(key=KRAKEN_API_KEY, secret=KRAKEN_SECRET_KEY)
+    account_balance = user.get_account_balance()
+
+    client = RESTClient(
+                        api_secret=CB_SECRET,
+                        api_key=CB_API_KEY,
+                        base_url='api.coinbase.com'
+                        )
+    accounts = client.get_accounts()['accounts']
+    print(accounts)
+    coin_USDC = [account for account in accounts if (account['name'] in [ 'USDC Wallet'])][0]['available_balance']['value']
+    coin_other_names 
+    coin_other_balance = [account for account in accounts if (account['name'] in ['BTC Wallet'])][0]['available_balance']['value']
+    
+
+    total_portfolio = pd.DataFrame({'USDC': [float(account_balance['USDC']) + float(coin_USDC)], '':[float(account_balance['XXBT']) + float(coin_other)]})
     print(total_portfolio)
 
     return total_portfolio
@@ -389,7 +413,7 @@ if __name__ == "__main__":
     print('test I can change again')
 
 
-    RUN = True
+    RUN = False
     count = 0
     count_trades = 0
 
@@ -402,11 +426,15 @@ if __name__ == "__main__":
                     kraken_coin='BTC/USDC',
                     count=count,
                     count_trades=count_trades,
-                    live_trade=True
+                    live_trade=False
                     )
         logger.info(f"Loop ran with count as {count}")
         logger.info(f"Loop ran with trade count as {count_trades}")
         time.sleep(30)
+    while True:
+        logger.info(f"Loop ran with trade count as {count_trades}")
+        logger.info("test mounted as volume")
+        time.sleep(1000)    
     
 
 

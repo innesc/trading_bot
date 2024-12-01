@@ -1,14 +1,22 @@
 ## Steps to run as volume
 
-If running in trading bot folder
 
-`$ docker run --name v2_trade -v$(pwd)/app:/app --env-file .env bash`
+Run this is container already exists
+
 
 Steps for building docker image
 
-`docker --debug build . -t v2_trade`
+`docker --debug build . -t v3_trade`
 
+Running in trading bot folder
 
+`docker run -v$(pwd)/app:/app --env-file .env v3_trade `
+
+Script needs to still be running our cant attach to container
+
+`docker exec -it <cointainer id> bash`
+
+This lets you conenct within the container provided it is running
 
 ## Sample API string for kraken
 
