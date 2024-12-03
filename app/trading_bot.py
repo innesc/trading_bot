@@ -43,7 +43,7 @@ def trade_buy_coin(rest_client,
         # If price is None, use the current price
         if price is None:
             product = rest_client.get_product(coin_coin)
-            price = float(product["price"])
+            price = float(product["price"].iloc[0])
             price = str(int(((price - buffer*price)//1)))
 
         # Place the limit order
@@ -52,14 +52,12 @@ def trade_buy_coin(rest_client,
             product_id=coin_coin,
             base_size=str(volume),
             limit_price=str(np.round(price,4)))
-        print(limit_order)
+        logger.info(limit_order)
     except Exception as e:
         # Log the full error details
         logger.error(f"Error placing limit order: {e}")
         if hasattr(e, 'response') and e.response is not None:
             logger.error(f"Response content: {e.response.content}")
-
-    print(f"value of cancel: {cancel}")
 
     if cancel:
         # Cancel any existing limit orders
@@ -101,7 +99,7 @@ def trade_buy_kraken(trade,
                 pair=coin_kraken,
                 price=np.round(price,4) ,
             )
-        print(limit_order)
+        logger.info(limit_order)
     except Exception as e:
         # Log the full error details
         logger.error(f"Error placing limit order kraken: {e}")
@@ -125,14 +123,14 @@ def get_account_balances_BTC():
                         base_url='api.coinbase.com'
                         )
     accounts = client.get_accounts()['accounts']
-    print(accounts)
     coin_USDC = [account for account in accounts if (account['name'] in [ 'USDC Wallet'])][0]['available_balance']['value']
     coin_BTC = [account for account in accounts if (account['name'] in ['BTC Wallet'])][0]['available_balance']['value']
     
 
     total_portfolio = pd.DataFrame({'USDC': [float(account_balance['USDC']) + float(coin_USDC)], 'BTC':[float(account_balance['XXBT']) + float(coin_BTC)]})
-    print(total_portfolio)
-
+    logger.info(total_portfolio)
+    now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    total_porfolio['time'] = now
     return total_portfolio
 
 
@@ -201,7 +199,7 @@ def sell_kraken(trade,
             pair=coin_kraken,
             price=np.round(price,4)
             )
-        print(limit_order)
+        logger.info(limit_order)
     except Exception as e:
         # Log the full error details
         logger.error(f"Error placing limit order kraken: {e}")
@@ -226,7 +224,7 @@ def sell_coin(rest_client, count, volume, coin_coin, price):
             base_size=str(volume),
             limit_price=str(np.round(price,4)))
         
-        print(limit_order)
+        logger.info(limit_order)
     except Exception as e:
         # Log the full error details
         logger.error(f"Error placing limit order: {e}")
@@ -450,7 +448,7 @@ if __name__ == "__main__":
                     )
         logger.info(f"Loop ran with count as {count}")
         logger.info(f"Loop ran with trade count as {count_trades}")
-        time.sleep(30)
+        time.sleep(10)
     while True:
         time.sleep(1000)    
     
