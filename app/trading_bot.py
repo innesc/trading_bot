@@ -18,6 +18,8 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 logger.addHandler(logging.StreamHandler())
 
+KILL_NUMBER = 10
+
 def trade_buy_coin(rest_client,
                    count,
                     price=None,
@@ -297,12 +299,12 @@ def price_logger(price_krak, price_coin, coin_coin, path_csv='temp.csv'):
         df.to_csv(path_csv, index=False)
     else:
         df_all = pd.read_csv(path_csv)
-        df = df_all.append(pd.DataFrame({'time':[now],'price_krak':[price_krak], 'price_coin':[price_coin], 'coin_coin':[coin_coin]}))
+        df = pd.concat([df_all, pd.DataFrame({'time':[now],'price_krak':[price_krak], 'price_coin':[price_coin], 'coin_coin':[coin_coin]})])
         df.to_csv(path_csv, index=False)
         
 
 
-def assess(count: int, traded: bool, count_trades: int, threshold=5, logging_path='trading_bot_accounts.csv') -> bool:
+def assess(count: int, traded: bool, count_trades: int, threshold=KILL_NUMBER, logging_path='trading_bot_accounts.csv') -> bool:
     """
     Determine if a trade attempt is allowed.
 
@@ -323,7 +325,7 @@ def assess(count: int, traded: bool, count_trades: int, threshold=5, logging_pat
     else:
         df_all = pd.read_csv(logging_path)
         df =  get_account_balances()
-        df_all = df_all.append(df)
+        df_all = pd.concat([df_all, df])
         df_all.to_csv(logging_path, index=False)
         
 
@@ -428,7 +430,7 @@ if __name__ == "__main__":
     print('test I can change again')
 
 
-    RUN = False
+    RUN = True
     count = 0
     count_trades = 0
 
@@ -436,11 +438,11 @@ if __name__ == "__main__":
         count += 1
         RUN, count_trades = orchestration(
                     buffer=0.02,
-                    volume=0.0001,
-                    coinbase_coin='BTC-USDC',
-                    kraken_coin='BTC/USDC',
+                    volume=5,
+                    coinbase_coin='AUDIO-USDC',
+                    kraken_coin='AUDIO/USD',
+                    kraken_market ='AUDIOUSD',
                     count=count,
-                    kraken_market ='XBTUSDC',
                     count_trades=count_trades,
                     live_trade=False
                     )
