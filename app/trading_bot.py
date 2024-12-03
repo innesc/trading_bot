@@ -133,7 +133,7 @@ def get_account_balances_BTC():
     return total_portfolio
 
 
-def get_account_balances():
+def get_account_balances(kraken_coin_mapper={'USDC': 'USDC', 'XXBT':'BTC' , 'ZCAD': 'CAD'}):
 
     user = User(key=KRAKEN_API_KEY, secret=KRAKEN_SECRET_KEY)
     account_balance = user.get_account_balance()
@@ -144,14 +144,25 @@ def get_account_balances():
                         base_url='api.coinbase.com'
                         )
     accounts = client.get_accounts()['accounts']
-    print(accounts)
-    coin_USDC = [account for account in accounts if (account['name'] in [ 'USDC Wallet'])][0]['available_balance']['value']
-    coin_other_names 
-    coin_other_balance = [account for account in accounts if (account['name'] in ['BTC Wallet'])][0]['available_balance']['value']
-    
+ 
+    coin_base = {}
+    for account in accounts:
+       if str(account['available_balance']['value']) != '0':
+            coin = account['currency']
+            coin_base[coin] = account['available_balance']['value']
 
-    total_portfolio = pd.DataFrame({'USDC': [float(account_balance['USDC']) + float(coin_USDC)], '':[float(account_balance['XXBT']) + float(coin_other)]})
-    print(total_portfolio)
+    coin_base = pd.DataFrame([coin_base]) 
+    kraken_portfolio = pd.DataFrame([account_balance]).rename(kraken_coin_mapper, axis=1).astype(float)
+
+    # fill 0 for missing portolios
+    all_cols = list(set(kraken_portfolio.columns.tolist() + coin_base.columns.tolist()))
+    for col in  all_cols:
+        if col not in kraken_portfolio.columns:
+            kraken_portfolio[col] = 0
+        if col not in coin_base.columns:
+            coin_base[col] = 0
+
+    total_portfolio =   kraken_portfolio.iloc[0] + coin_base.iloc[0].astype(float)
 
     return total_portfolio
 
@@ -261,7 +272,7 @@ a
     return (float(df[coin].loc['a'][0]) +  float(df[coin].loc['b'][0])) / 2
 
 
-def price_logger(price_krak, price_coin, coin_coin, path_csv='/Users/clintoninnes/Desktop/programming/python_stuff/2024/trading_bot/temp.csv'):
+def price_logger(price_krak, price_coin, coin_coin, path_csv='temp.csv'):
     
     """
     Logs prices of coin on kraken and coinbase.
@@ -291,7 +302,7 @@ def price_logger(price_krak, price_coin, coin_coin, path_csv='/Users/clintoninne
         
 
 
-def assess(count: int, traded: bool, count_trades: int, threshold=5, logging_path='/Users/clintoninnes/Desktop/programming/python_stuff/2024/trading_bot/trading_bot_accounts.csv') -> bool:
+def assess(count: int, traded: bool, count_trades: int, threshold=5, logging_path='trading_bot_accounts.csv') -> bool:
     """
     Determine if a trade attempt is allowed.
 
@@ -408,6 +419,10 @@ def orchestration(
     price_logger(kraken_price, coinbase_price, coinbase_coin)
     return assess(count, traded, count_trades), count_trades
 
+def reset_portfolio(coinbase_coin='BTC-USDC',
+                    kraken_coin='BTC/USDC',):
+    pass
+
 if __name__ == "__main__":
     
     print('test I can change again')
@@ -425,6 +440,7 @@ if __name__ == "__main__":
                     coinbase_coin='BTC-USDC',
                     kraken_coin='BTC/USDC',
                     count=count,
+                    kraken_market ='XBTUSDC',
                     count_trades=count_trades,
                     live_trade=False
                     )
@@ -432,8 +448,6 @@ if __name__ == "__main__":
         logger.info(f"Loop ran with trade count as {count_trades}")
         time.sleep(30)
     while True:
-        logger.info(f"Loop ran with trade count as {count_trades}")
-        logger.info("test mounted as volume")
         time.sleep(1000)    
     
 
