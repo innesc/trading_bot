@@ -5,6 +5,7 @@ from datetime import datetime
 import os
 from kraken.spot import  Funding, Market, Trade, User
 import logging
+import numpy as np
 import json
 import random
 from dotenv import load_dotenv
@@ -50,7 +51,7 @@ def trade_buy_coin(rest_client,
             client_order_id=str(count),
             product_id=coin_coin,
             base_size=str(volume),
-            limit_price=price)
+            limit_price=str(np.round(price,4)))
         print(limit_order)
     except Exception as e:
         # Log the full error details
@@ -98,7 +99,7 @@ def trade_buy_kraken(trade,
                 side="buy",
                 volume=volume,
                 pair=coin_kraken,
-                price=price ,
+                price=np.round(price,4) ,
             )
         print(limit_order)
     except Exception as e:
@@ -165,7 +166,7 @@ def get_account_balances(kraken_coin_mapper={'USDC': 'USDC', 'XXBT':'BTC' , 'ZCA
             coin_base[col] = 0
 
     total_portfolio =   kraken_portfolio.iloc[0] + coin_base.iloc[0].astype(float)
-
+    total_portfolio = total_portfolio.to_frame().T
     return total_portfolio
 
 def sell_kraken(trade,
@@ -198,7 +199,7 @@ def sell_kraken(trade,
             side='sell',
             volume=volume,
             pair=coin_kraken,
-            price=price
+            price=np.round(price,4)
             )
         print(limit_order)
     except Exception as e:
@@ -223,7 +224,7 @@ def sell_coin(rest_client, count, volume, coin_coin, price):
             client_order_id=str(count),
             product_id=coin_coin,
             base_size=str(volume),
-            limit_price=str(price))
+            limit_price=str(np.round(price,4)))
         
         print(limit_order)
     except Exception as e:
@@ -345,7 +346,8 @@ def orchestration(
                     count: int = 1,
                     kraken_market: str = 'XBTUSDC',
                     count_trades: int = 0,
-                    live_trade: bool = True
+                    live_trade: bool = True,
+                    round_price: bool = True,
                     ) -> tuple:
     """
     Orchestration function for trading bot. This function will trade if the price of the coin on Kraken is higher than the
@@ -438,13 +440,13 @@ if __name__ == "__main__":
         count += 1
         RUN, count_trades = orchestration(
                     buffer=0.02,
-                    volume=5,
+                    volume=25,
                     coinbase_coin='AUDIO-USDC',
                     kraken_coin='AUDIO/USD',
                     kraken_market ='AUDIOUSD',
                     count=count,
                     count_trades=count_trades,
-                    live_trade=False
+                    live_trade=True
                     )
         logger.info(f"Loop ran with count as {count}")
         logger.info(f"Loop ran with trade count as {count_trades}")
