@@ -130,7 +130,7 @@ def get_account_balances_BTC():
     total_portfolio = pd.DataFrame({'USDC': [float(account_balance['USDC']) + float(coin_USDC)], 'BTC':[float(account_balance['XXBT']) + float(coin_BTC)]})
     logger.info(total_portfolio)
     now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-    total_porfolio['time'] = now
+    total_portfolio['time'] = now
     return total_portfolio
 
 
@@ -165,6 +165,9 @@ def get_account_balances(kraken_coin_mapper={'USDC': 'USDC', 'XXBT':'BTC' , 'ZCA
 
     total_portfolio =   kraken_portfolio.iloc[0] + coin_base.iloc[0].astype(float)
     total_portfolio = total_portfolio.to_frame().T
+    now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    total_portfolio['time'] = now
+
     return total_portfolio
 
 def sell_kraken(trade,
@@ -378,7 +381,7 @@ def orchestration(
     price_coin = rest_client.get_products()
     df = pd.DataFrame(price_coin['products'])
     price_coin = df[df['product_id']== coinbase_coin]['price']
-    coinbase_price = float(price_coin)
+    coinbase_price = float(price_coin.iloc[0])
 
     logger.info(f"The price in coin {coinbase_price}")
 
@@ -437,7 +440,7 @@ if __name__ == "__main__":
     while RUN:
         count += 1
         RUN, count_trades = orchestration(
-                    buffer=0.02,
+                    buffer=0.015,
                     volume=25,
                     coinbase_coin='AUDIO-USDC',
                     kraken_coin='AUDIO/USD',
