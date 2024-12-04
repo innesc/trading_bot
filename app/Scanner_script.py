@@ -48,20 +48,33 @@ def coinbase_scan():
     df.index=range(len(df))
     return df
 
+
+def put_in_csv(f,CSV_PATH):
+    if os.path.isfile(CSV_PATH) == False :
+        df = f()
+        df.to_csv(CSV_PATH, index=False)
+    else:
+        df_all = pd.read_csv(CSV_PATH)
+        df = f()
+        df_all = pd.concat([df_all,df])
+        df_all.to_csv(CSV_PATH, index=False)
+
 def log_both():
     df_coinbase = coinbase_scan()
     df_kraken = kraken_scan()
     df_kraken.columns = [col + '_from_kraken' for col in df_kraken.columns]
     df_coinbase.columns = [col + '_from_coin' for col in df_coinbase.columns]
 
-    print( df_coinbase.shape)
-
-    print(df_kraken.shape)
-
-
     return pd.concat([df_kraken, df_coinbase], axis=1)
 
+#@put_in_csv(CSV_PATH='total_markey.csv')
+def log_both_v2():
+    df_coinbase = coinbase_scan()
+    df_kraken = kraken_scan()
+    df_kraken.columns = [col + '_from_kraken' for col in df_kraken.columns]
+    df_coinbase.columns = [col + '_from_coin' for col in df_coinbase.columns]
 
+    return pd.concat([df_kraken, df_coinbase], axis=1)
 
 
 if __name__ == "__main__":
