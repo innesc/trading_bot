@@ -432,7 +432,8 @@ def orchestration(
         if (hasattr(e,'response') and e.response is not None):
             logger.error(f"Response content: {e.response.content}")
         return assess(count, traded, count_trades), count_trades
-
+    e1 = None
+    e2 = None
     # Check if we should trade
     if live_trade:
         if kraken_price > (coinbase_price + buffer * coinbase_price):
@@ -502,7 +503,7 @@ if __name__ == "__main__":
     while RUN:
         count += 1
         RUN, count_trades = orchestration(
-                    buffer=0,
+                    buffer=0.015,
                     volume=25,
                     coinbase_coin='AUDIO-USDC',
                     kraken_coin='AUDIO/USD',
