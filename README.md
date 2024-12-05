@@ -1,14 +1,18 @@
 ## Steps to run as volume
 
-If running in trading bot folder
-
-`$ docker run --name v2_trade -v$(pwd)/app:/app --env-file .env bash`
+### Steps for local development within a container (must be running)
 
 Steps for building docker image
 
-`docker --debug build . -t v2_trade`
+`docker --debug build . -t v3_trade`
 
+Running in trading bot folder
 
+`docker run -v$(pwd)/app:/app --env-file .env v3_trade `
+
+Container needs to still be running our cant attach to container
+
+`docker exec -it <cointainer id> bash`
 
 ## Sample API string for kraken
 
@@ -27,7 +31,6 @@ coinbase
 
 Kraken API
 https://github.com/btschwertfeger
-
 
 
 Coinbase API

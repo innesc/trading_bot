@@ -2,6 +2,8 @@
 Trading/
 adhoc_dont_commit/
 *.csv
+Jup_env/
+.ipynb_checkpoints
 
 
 __pycache__/
