@@ -4,6 +4,8 @@ adhoc_dont_commit/
 *.csv
 Jup_env/
 .ipynb_checkpoints
+*.xlsx
+*.xls
 
 
 __pycache__/
