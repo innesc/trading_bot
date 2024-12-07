@@ -170,7 +170,7 @@ def get_account_balances(kraken_coin_mapper={'USDC': 'USDC', 'XXBT':'BTC' , 'ZCA
         total_portfolio = total_portfolio.to_frame().T
 
         coin_base.columns = [col + '_coinbase' for col in coin_base.columns]
-        kraken_potfolios = [col + '_kraken' for col in kraken_portfolio.columns]
+        kraken_portfolio.columns = [col + '_kraken' for col in kraken_portfolio.columns]
         now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
         total_portfolio['time'] = now
         total_portfolio = pd.concat([total_portfolio, coin_base, kraken_portfolio], axis=1)
@@ -335,6 +335,28 @@ def assess_errors(e1, e2):
     else:
         return False
     
+def assess_pre():
+    try:
+        # Get the price from Coinbase
+        rest_client = RESTClient(
+                            api_secret=CB_SECRET,
+                            api_key=CB_API_KEY,
+                            base_url='api.coinbase.com',
+                            )
+        
+        coin_incomplete = len([order for order in rest_client.list_orders()['orders'] if order[ 'status'] not in  ['FILLED','CANCELLED']])
+        user = User(key=KRAKEN_API_KEY, secret=KRAKEN_SECRET_KEY)
+        kraken_open =  len(user.get_open_orders()['open'])
+
+        if kraken_open> 0 or coin_incomplete > 0:
+            return False
+        else:
+            return True
+    except Exception as e:
+        logger.info("test didn't work dut to error. Error message: {e}")
+        return True
+        
+
 def assess(count: int, traded: bool, count_trades: int, e1=None, e2=None, threshold=KILL_NUMBER, logging_path='trading_bot_accounts.csv') -> bool:
     """
     Determine if a trade attempt is allowed.
@@ -438,7 +460,9 @@ def orchestration(
     e1 = None
     e2 = None
     # Check if we should trade
-    if live_trade:
+    dont_kill = assess_pre()
+    if live_trade & dont_kill:
+
         if kraken_price > (coinbase_price + buffer * coinbase_price):
             # Buy on Kraken
             e1 = sell_kraken(trade,
