@@ -4,4 +4,4 @@ WORKDIR /app
 COPY /app /app
 RUN pip install -r requirements.txt
 RUN pwd
-CMD ["python", "trading_bot.py"]
+CMD ["python", "dummy_app.py"]

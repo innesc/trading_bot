@@ -166,11 +166,14 @@ def get_account_balances(kraken_coin_mapper={'USDC': 'USDC', 'XXBT':'BTC' , 'ZCA
                 kraken_portfolio[col] = 0
             if col not in coin_base.columns:
                 coin_base[col] = 0
-
         total_portfolio =   kraken_portfolio.iloc[0] + coin_base.iloc[0].astype(float)
         total_portfolio = total_portfolio.to_frame().T
+
+        coin_base.columns = [col + '_coinbase' for col in coin_base.columns]
+        kraken_potfolios = [col + '_kraken' for col in kraken_portfolio.columns]
         now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
         total_portfolio['time'] = now
+        total_portfolio = pd.concat([total_portfolio, coin_base, kraken_portfolio], axis=1)
     except Exception as e:
         logger.error(e)
         total_portfolio = pd.DataFrame({})
