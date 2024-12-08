@@ -17,7 +17,8 @@ CB_API_KEY = os.getenv("CB_API_KEY")
 KRAKEN_API_KEY = os.getenv("kraken_api_key")
 KRAKEN_SECRET_KEY = os.getenv("kraken_private_key")
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG)
+#logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logger.addHandler(logging.StreamHandler())
 
 KILL_NUMBER = 10
