@@ -14,8 +14,8 @@ https://docs.support.arc.umich.edu/python/jupyter_virtualenv/#:~:text=There%20ar
 
 `pip install requitements.txt`
 
-`pip install ipython`
+`pip install ipykernel`
 
-`ipython kernel install --user --name=my_env`
+`python -m ipykernel install --user --name=my_env`
 
 

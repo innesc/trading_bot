@@ -49,11 +49,21 @@ def coinbase_scan():
     return df
 
 
-def put_in_csv(f,CSV_PATH):
+def put_in_csv(f, CSV_PATH):
+    """Puts the output of a function into a csv in an append manner
+    
+    If the file does not exist, it will create it and put the data in it.
+    If the file exists, it will append the new data to the existing file
+    
+    :param f: a function that returns a dataframe
+    :param CSV_PATH: the path to the csv file
+    """
     if os.path.isfile(CSV_PATH) == False :
+        # If the file does not exist, create it and put the data in it
         df = f()
         df.to_csv(CSV_PATH, index=False)
     else:
+        # If the file exists, append the new data to the existing file
         df_all = pd.read_csv(CSV_PATH)
         df = f()
         df_all = pd.concat([df_all,df])
