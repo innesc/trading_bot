@@ -341,15 +341,17 @@ def check_portfolio(volume,
                     coin_coin='AUDIO_coinbase',
                      coin_kraken='AUDIO_kraken',
                     cash_coin='USDC_coinbase',
-                    cash_kraken='ZUSD_kraken'):
+                    cash_kraken='ZUSD_kraken',
+                    log=False):
     portfolio = get_account_balances(kraken_coin_mapper={'USDC': 'USDC', 'XXBT':'BTC' , 'ZCAD': 'CAD'})
-    def f(portfolio=portfolio):
-        """
-        Function to get the current state of the portfolio and return it.
-        """
-        return portfolio
-    
-    put_in_csv(f, 'trading_bot_accounts.csv')
+    if log:
+        def f(portfolio=portfolio):
+            """
+            Function to get the current state of the portfolio and return it.
+            """
+            return portfolio
+        
+        put_in_csv(f, 'trading_bot_accounts.csv')
 
     check_coin = [coin_coin, coin_kraken]
     check_cash = [cash_coin, cash_kraken]
