@@ -17,7 +17,7 @@ CB_API_KEY = os.getenv("CB_API_KEY")
 KRAKEN_API_KEY = os.getenv("kraken_api_key")
 KRAKEN_SECRET_KEY = os.getenv("kraken_private_key")
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger.addHandler(logging.StreamHandler())
 
 KILL_NUMBER = 10
@@ -335,7 +335,37 @@ def assess_errors(e1, e2):
     else:
         return False
     
-def assess_pre():
+
+def check_portfolio(volume,
+                    price,
+                    coin_coin='AUDIO_coinbase',
+                     coin_kraken='AUDIO_kraken',
+                    cash_coin='USDC_coinbase',
+                    cash_kraken='ZUSD_kraken'):
+    portfolio = get_account_balances(kraken_coin_mapper={'USDC': 'USDC', 'XXBT':'BTC' , 'ZCAD': 'CAD'})
+    def f(portfolio=portfolio):
+        """
+        Function to get the current state of the portfolio and return it.
+        """
+        return portfolio
+    
+    put_in_csv(f, 'trading_bot_accounts.csv')
+
+    check_coin = [coin_coin, coin_kraken]
+    check_cash = [cash_coin, cash_kraken]
+
+
+    if (portfolio[check_coin].astype(float) < volume).values.any():
+        logger.info('No more coin is present')
+        return False
+    elif (portfolio[check_cash].astype(float) < volume * price).values.any():
+        logger.info('No more cash is present')
+        return False
+    else:
+        return True
+
+
+def check_trades():
     try:
         # Get the price from Coinbase
         rest_client = RESTClient(
@@ -347,7 +377,7 @@ def assess_pre():
         coin_incomplete = len([order for order in rest_client.list_orders()['orders'] if order[ 'status'] not in  ['FILLED','CANCELLED']])
         user = User(key=KRAKEN_API_KEY, secret=KRAKEN_SECRET_KEY)
         kraken_open =  len(user.get_open_orders()['open'])
-
+        
         if kraken_open> 0 or coin_incomplete > 0:
             return False
         else:
@@ -355,7 +385,21 @@ def assess_pre():
     except Exception as e:
         logger.info("test didn't work dut to error. Error message: {e}")
         return True
-        
+
+def assess_pre(volume, price, coin_coin='AUDIO_coinbase', coin_kraken='AUDIO_kraken', cash_coin='USDC_coinbase', cash_kraken='ZUSD_kraken'):
+    
+    continue1 = check_trades()
+    continue2 = check_portfolio(volume,
+                                price,
+                                coin_coin,
+                                coin_kraken,
+                                cash_coin,
+                                cash_kraken)
+    
+    if continue1 and continue2:
+        return True
+    else:
+        return False                                
 
 def assess(count: int, traded: bool, count_trades: int, e1=None, e2=None, threshold=KILL_NUMBER, logging_path='trading_bot_accounts.csv') -> bool:
     """
@@ -371,7 +415,6 @@ def assess(count: int, traded: bool, count_trades: int, e1=None, e2=None, thresh
     """
     
     if traded:
-        now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
         if os.path.isfile(logging_path) == False :
             df =  get_account_balances()
             df.to_csv(logging_path, index=False)
@@ -407,6 +450,10 @@ def orchestration(
                     round_price: bool = True,
                     log_all: bool = True,
                     CSV_total_market_path = 'total_market.csv',
+                    coin_coin='AUDIO_coinbase',
+                    coin_kraken='AUDIO_kraken',
+                    cash_coin='USDC_coinbase',
+                    cash_kraken='ZUSD_kraken'
                     ) -> tuple:
     """
     Orchestration function for trading bot. This function will trade if the price of the coin on Kraken is higher than the
@@ -443,8 +490,9 @@ def orchestration(
             put_in_csv(log_both_v2, CSV_total_market_path)
     except Exception as e:
         logger.error(e)
-        if (hasattr(e,'response') and e.response is not None):
-            logger.error(f"Response content: {e.response.content}")
+        if hasattr(e,'response'):
+            if (e.response is not None):
+                logger.error(f"Response content: {e.response.content}")
         return assess(count, traded, count_trades), count_trades
     
     try:
@@ -454,15 +502,21 @@ def orchestration(
         logger.info(f"The price in kraken {kraken_price}")
     except Exception as e:
         logger.error(e)
-        if (hasattr(e,'response') and e.response is not None):
-            logger.error(f"Response content: {e.response.content}")
+        if hasattr(e,'response'):
+            if (e.response is not None):
+                logger.error(f"Response content: {e.response.content}")
         return assess(count, traded, count_trades), count_trades
     e1 = None
     e2 = None
     # Check if we should trade
-    dont_kill = assess_pre()
+    dont_kill = assess_pre(volume,
+                            float(price_coin),
+                            coin_coin,
+                            coin_kraken,
+                            cash_coin,
+                            cash_kraken)
     if live_trade & dont_kill:
-
+        # Check if the price on Kraken is higher than the price on Coinbase
         if kraken_price > (coinbase_price + buffer * coinbase_price):
             # Buy on Kraken
             e1 = sell_kraken(trade,
@@ -483,6 +537,7 @@ def orchestration(
                         cancel=False)
             traded = True
             count_trades += 1
+        # Check if the price on Coinbase is higher than the price on Kraken
         elif (kraken_price + buffer * kraken_price) < coinbase_price:
             # Buy on Kraken
             e1 = trade_buy_kraken(trade,
