@@ -1,4 +1,10 @@
-## Steps to run as volume
+#What is it ?
+
+Simple trading bot for trading between crypto exchanges.
+
+
+
+## Steps to run as docker container
 
 ### Steps for local development within a container (must be running)
 
