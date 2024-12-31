@@ -1,4 +1,4 @@
-#What is it ?
+# What is it ?
 
 Simple trading bot for trading between crypto exchanges.
 
