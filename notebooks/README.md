@@ -1,5 +1,9 @@
-## Links for jupyter notebook set up with virtual env
+# What is it?
 
+Various notebooks for comparing prices between currencies accross exchnages
+
+
+### Helpful  steps for setting up virtual evv 
 
 https://stackoverflow.com/questions/42449814/running-jupyter-notebook-in-a-virtualenv-installed-sklearn-module-not-available
 
